@@ -137,7 +137,7 @@ if __name__ == "__main__":
         kf.predict()        
         x_est[i+1, :] = kf.x[:2]
     
-    plot_trajectory(trajectory, x_est, frame_shape, save_path=trajectory_type + '.png')
+    plot_trajectory(trajectory, x_est, frame_shape, save_path=r'results/' + trajectory_type + '.png')
 
 
     trajectory_type = 'side_to_side'
@@ -151,7 +151,7 @@ if __name__ == "__main__":
         kf.predict()        
         x_est[i+1, :] = kf.x[:2]
     
-    plot_trajectory(trajectory, x_est, frame_shape, save_path=trajectory_type + '.png')
+    plot_trajectory(trajectory, x_est, frame_shape, save_path=r'results/' + trajectory_type + '.png')
 
 
     trajectory_type = 'diagonal'
@@ -165,7 +165,7 @@ if __name__ == "__main__":
         kf.predict()        
         x_est[i+1, :] = kf.x[:2]
     
-    plot_trajectory(trajectory, x_est, frame_shape, save_path=trajectory_type + '.png')
+    plot_trajectory(trajectory, x_est, frame_shape, save_path=r'results/' + trajectory_type + '.png')
 
     
 
@@ -180,4 +180,4 @@ if __name__ == "__main__":
         kf.predict()
         x_est[i+1, :] = kf.x[:2]
     
-    plot_trajectory(trajectory, x_est, frame_shape, save_path=trajectory_type + '.png')
+    plot_trajectory(trajectory, x_est, frame_shape, save_path=r'results/' + trajectory_type + '.png')
