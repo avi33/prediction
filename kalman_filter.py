@@ -8,13 +8,14 @@ class KalmanFilter:
         self.C = np.array([[1, 0, 0, 0],
                            [0, 1, 0, 0]], dtype = self.dtype)
                 
-        self.q = process_noise_std ** 2
+        self.dim_model = dim_model
+        self.q = process_noise_std
         self.I = np.eye(dim_model, dtype=self.dtype)
-        self.t_ahead = 0.25 #sec
+        self.t_ahead = 0.2 #sec
         self.R = np.eye(dim_meas) * meas_noise_std        
         self.x_est = np.zeros(dim_model, dtype=self.dtype)
-        self.P_est = np.eye(dim_model, dtype=self.dtype)
-        self.P_est[2:, 2:] *= 10
+        self.P_est = np.eye(dim_model, dtype=self.dtype)        
+        self.P_est[2:, 2:] *= 1
         self.x_pred = self.x_est
         self.P_pred = self.P_est
         self.t_prev = None
@@ -28,32 +29,40 @@ class KalmanFilter:
         return A
 
     def _Q(self, dt):
-        Q = np.array([[self.q * dt ** 3 / 3, 0, self.q * dt ** 2 / 2, 0],
-                      [0, self.q * dt ** 3 / 3, 0, self.q * dt ** 2 /2],
-                      [self.q * dt ** 2/ 2, 0, self.q * dt, 0],
-                      [0, self.q * dt ** 2 / 2, 0, self.q * dt]])  
+        Q = self.q * np.array([[dt ** 3 / 3, 0, dt ** 2 / 2, 0],
+                               [0, dt ** 3 / 3, 0, dt ** 2 /2],
+                               [dt ** 2/ 2, 0, dt, 0],
+                               [0, dt ** 2 / 2, 0, dt]])
         return Q
 
        
-    def predict(self, dt):        
+    def predict(self, t):
+        dt = t - self.t_prev + self.t_ahead
         A = self._A(dt)
         Q = self._Q(dt)
         self.P_pred = A @ self.P_est @ A.T + Q        
-        self.x_pred = A @ self.x_est        
+        self.x_pred = A @ self.x_est    
+        return self.x_pred, self.P_pred    
     
-    def update(self, y, dt):
+    def update(self, y, t):
+        if self.t_prev is None:
+            self.reset(y, t)
+            return self.x_est, self.P_est
+        self.t_prev = t
         err = y - self.C @ self.x_pred
         S = self.C @ self.P_pred @ self.C.T + self.R
         K = self.P_pred @ self.C.T @ np.linalg.inv(S)
         self.x_est = self.x_pred + K @ err
         self.P_est = (self.I - K @ self.C) @ self.P_pred
+    
+    def reset(self, y, t):
+        self.t_prev = t
+        self.x_est = np.array((y[0], y[1], 0, 0))
+        self.P_est = np.eye(self.dim_model, dtype=self.dtype)
+        self.P_est[2:, 2:] *= 10
+    
 
-        # num = self.P_pred @ self.C.T
-        # denum = self.C @ self.P_pred @ self.C.T + self.R
-        # K = num @ np.linalg.inv(denum)
-        # IKC = self.I - K @ self.C
-        # KRK = K @ self.R @ K.T
-        # self.P_est = IKC @ self.P_pred @ IKC.T + KRK
-        
-        
-        # self.x_est = self.x_pred + K @ err
+if __name__ == "__main__":
+    KF = KalmanFilter(2, 4, 1, 1)
+    Q = KF._Q(1/10)
+    print(Q)
