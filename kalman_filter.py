@@ -50,6 +50,9 @@ class KalmanFilter:
             return self.x_est, self.P_est
         self.t_prev = t
         err = y - self.C @ self.x_pred
+        if np.sqrt(np.mean(err**2)) > 100:
+            self.reset(y, t)
+            return self.x_est, self.P_est
         S = self.C @ self.P_pred @ self.C.T + self.R
         K = self.P_pred @ self.C.T @ np.linalg.inv(S)
         self.x_est = self.x_pred + K @ err
