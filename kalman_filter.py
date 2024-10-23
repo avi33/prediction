@@ -91,9 +91,10 @@ def simulate_2d_motion(noise_std=0.1):
     return(np.array(positions), np.array(measurements), time_steps)
 
 if __name__ == "__main__":
-    KF = KalmanFilter(2, 4, 1, 1)
     # Initialize the RLS system with measurement standard deviation
     noise_std=0.01    
+    KF = KalmanFilter(2, 4, noise_std, 1)
+
     z_true, z, t = simulate_2d_motion(noise_std=noise_std)
     z_pred = []
     for i in range(t.shape[-1]):
