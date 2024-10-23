@@ -1,5 +1,6 @@
 import numpy as np
 import time
+import matplotlib.pyplot as plt
 
 class KalmanFilter:
     def __init__(self, dim_meas, dim_model, meas_noise_std, process_noise_std) -> None:
@@ -29,10 +30,10 @@ class KalmanFilter:
         return A
 
     def _Q(self, dt):
-        Q = self.q * np.array([[dt ** 3 / 3, 0, dt ** 2 / 2, 0],
-                               [0, dt ** 3 / 3, 0, dt ** 2 /2],
-                               [dt ** 2/ 2, 0, dt, 0],
-                               [0, dt ** 2 / 2, 0, dt]])
+        Q = self.q * np.array([[dt ** 4 / 4, 0, dt ** 3 / 2, 0],
+                               [0, dt ** 4 / 3, 0, dt ** 3 /2],
+                               [dt ** 3/ 2, 0, dt**2, 0],
+                               [0, dt ** 3 / 2, 0, dt**2]])
         return Q
 
        
@@ -65,7 +66,47 @@ class KalmanFilter:
         self.P_est[2:, 2:] *= 10
     
 
+# Function to simulate 2D point motion with constant velocity
+def simulate_2d_motion(noise_std=0.1):
+    # Parameters for the 2D motion
+    p0 = np.array([0, 0])  # Initial position (x0, y0)
+    v = np.array([1, 0.5])  # Constant velocity (vx, vy)
+    fs = 10  # Frequency of measurements (e.g., 10 Hz)
+    time_steps = np.arange(0, 5, 1/fs)  # Time steps from 0 to 5 seconds with fs frequency
+
+
+    positions = []
+    measurements = []
+    for t in time_steps:
+        # True position without noise
+        p_true = p0 + v * t
+        positions.append(p_true)
+        
+        # Measurement with added Gaussian noise
+        noise = np.random.normal(0, noise_std, p_true.shape)
+        p_measured = p_true + noise
+        measurements.append(p_measured)
+        
+    # Simulate the motion and noisy measurements
+    return(np.array(positions), np.array(measurements), time_steps)
+
 if __name__ == "__main__":
     KF = KalmanFilter(2, 4, 1, 1)
-    Q = KF._Q(1/10)
-    print(Q)
+    # Initialize the RLS system with measurement standard deviation
+    noise_std=0.01    
+    z_true, z, t = simulate_2d_motion(noise_std=noise_std)
+    z_pred = []
+    for i in range(t.shape[-1]):
+        KF.update(z[i], t[i])
+        x_est, P_est = KF.predict(t=t[i])        
+        z_pred.append(x_est[:2])
+    z_pred = np.array(z_pred)
+
+    fig, ax = plt.subplots(2)
+    ax[0].plot(t, z_true[:, 0])    
+    ax[0].plot(t, z[:, 0])        
+    ax[0].plot(t, z_pred[:, 0])    
+    ax[1].plot(t, z_true[:, 1])    
+    ax[1].plot(t, z[:, 1])        
+    ax[1].plot(t, z_pred[:, 1])    
+    plt.show()

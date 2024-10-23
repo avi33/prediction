@@ -21,17 +21,21 @@ def initialize_kalman_filter(x0, dt):
     process_noise_std = 10
     q = process_noise_std ** 2
 
-    kf.Q = np.array([[q*dt**3/3, 0, q*dt**2/2, 0],
-                     [0, q*dt**3/3, 0, q*dt**2/2],
-                     [q*dt**2/2, 0, q*dt, 0],
-                     [0, q*dt**2/2, 0, q*dt]])        
-    print(kf.Q)
+    # kf.Q = np.array([[q*dt**3/3, 0, q*dt**2/2, 0],
+    #                  [0, q*dt**3/3, 0, q*dt**2/2],
+    #                  [q*dt**2/2, 0, q*dt, 0],
+    #                  [0, q*dt**2/2, 0, q*dt]])
+    kf. Q = q * np.array([[dt ** 3 / 3, 0, dt ** 2 / 2, 0],
+                         [0, dt ** 3 / 3, 0, dt ** 2 /2],
+                         [dt ** 2/ 2, 0, dt, 0],
+                         [0, dt ** 2 / 2, 0, dt]])
+    # print(kf.Q)
     # Measurement noise covariance
     r = 4.0  # measurement noise magnitude
     kf.R = r * np.eye(2)
 
     # Initial state covariance
-    kf.P[:2, :2] *= 10.0
+    kf.P[2:, 2:] *= 10.0
 
     # Initial state
     kf.x = np.hstack([x0, 0, 0])
@@ -118,15 +122,15 @@ def plot_trajectory(trajectory, trajectory_est=None, frame_shape=None, save_path
 
 
 if __name__ == "__main__":
-    frame_shape = (1280*2, 940*2)
+    frame_shape = (2560*2, 1440*2)
     steps = 500
-    fov = 48
+    fov = 44
     noise_std = 4
     fps = 16
     dt = 1/fps
     t = np.arange(0, steps, 1) / fps
 
-    trajectory_type = 'far_to_close'
+    trajectory_type = 'diagonal'
     trajectory = generate_trajectory(frame_shape, fov, fps, trajectory_type, steps, noise_std)    
     
     x_est = np.zeros_like(trajectory)    

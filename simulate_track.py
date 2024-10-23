@@ -33,13 +33,16 @@ def update(frame):
     # Update the original point (point 1)
     x1, y1 = initial_position_1
     x1 += distance_per_frame * frame
+    w = np.random.randn(2) * 2
+    x1 += w[0]
+    y1 += w[1]
     point1.set_data([x1], [y1])  # x1 and y1 must be sequences
 
     # Simulate Kalman filter update for the second point (point 2)
     # For example, we could just add a small random noise to the original position
     # x2 = x1 + np.random.normal(0, 1)  # Simulated Kalman filtered x position
     # y2 = y1 + np.random.normal(0, 1)  # Simulated Kalman filtered y position    
-    x = np.array((x1, y1))
+    x = np.array((x1, y1))    
     t_prev = t=time.time()
     kf.update(x, t_prev)
     t_rand = 1/16 + random.random() * (1/10-1/16)
@@ -49,8 +52,8 @@ def update(frame):
 
     point2.set_data([x_est[0]], [x_est[1]])  # x2 and y2 must be sequences
     dx = x_est[:2] - x
-    print(dx, t_now-t_prev)
-    print(kf.P_est)
+    # print(dx, t_now-t_prev)
+    print(kf.x_est[2:])
     return point1, point2
 
 # Create the animation
