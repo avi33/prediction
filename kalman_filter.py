@@ -16,12 +16,12 @@ class KalmanFilter:
         self.dim_model = dim_model
         self.q = process_noise_std
         self.I = np.eye(dim_model, dtype=self.dtype)
-        self.t_ahead = 0.1 #sec
-        self.R = np.eye(4) * meas_noise_std ** 2
-        self.x_est = np.zeros(dim_model, dtype=self.dtype)
+        self.t_ahead = 0.2 #sec
+        self.R = np.eye(dim_meas) * (meas_noise_std ** 2)
+        self.x_est = None
         self.P_est = None
-        self.x_pred = self.x_est
-        self.P_pred = self.P_est
+        self.x_pred = None
+        self.P_pred = None
         self.t_prev = None
         self.y_prev = None
         
@@ -82,7 +82,8 @@ class KalmanFilter:
     def reset(self, y, t):
         self.t_prev = t
         self.x_est = np.array((y[0], y[1], 0, 0))
-        self.P_est = np.eye(self.dim_model, dtype=self.dtype)        
+        self.P_est = np.eye(self.dim_model, dtype=self.dtype)
+        self.P_est[2:, 2:] *= 10
         self.y_prev = y
     
 
