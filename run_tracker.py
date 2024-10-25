@@ -32,7 +32,7 @@ def run():
             t = frame_id / fps
             tacker.step(frame, t, frame_id)            
             # Write the fr ame to the output file
-            cap_out.write(frame)
+            # cap_out.write(frame)
         else:
             # Break the loop if no more frames are available
             break
@@ -52,7 +52,7 @@ class Tracker:
         self.track = KalmanFilter(4, 4, 2, 1)
     
     def step(self, frame, t, frame_id):
-        preds = self.det.predict(frame)[0]
+        preds = self.det.predict(frame, verbose=False)[0]
         kpts = preds.keypoints.data[0]        
         if kpts.shape[0] > 0:
             ii = preds.boxes.conf.argmax()
@@ -60,9 +60,9 @@ class Tracker:
                 com = kpts[[5, 6, 11, 12], :2].mean(dim=0)
                 if com.sum() != 0 and t > 2:                
                     com = com.cpu().int().numpy()[:2]
-                    frame = cv2.circle(frame, com, radius=1, color=(0, 255, 0), thickness=2)
+                    frame = cv2.circle(frame, com, radius=1, color=(0, 255, 0), thickness=2)                    
                     _ = self.track.update(com, t)
-                    pnt_pred = self.track.predict(t)
+                    pnt_pred = self.track.predict(t)                                            
                     frame = cv2.circle(frame, pnt_pred.astype(np.int32), radius=1, color=(0, 0, 255), thickness=2)
         return
 
