@@ -4,20 +4,12 @@ import matplotlib.pyplot as plt
 
 
 class KalmanFilter:
-    def __init__(self, dim_meas, dim_model, meas_noise_std, process_noise_std) -> None:
-        self.dtype = np.float32
-
-        self.C = np.array([[1, 0, 0, 0],
-                           [0, 1, 0, 0],
-                           [0, 0, 1, 0],
-                           [0, 0, 0, 1],
-                           ], dtype = self.dtype)
-                
+    def __init__(self, dim_meas, dim_model, meas_noise_std, process_noise_std) -> None:        
         self.dim_model = dim_model
-        self.q = process_noise_std
-        self.I = np.eye(dim_model, dtype=self.dtype)
-        self.t_ahead = 0.2 #sec
+        self.process_noise_std = process_noise_std
         self.R = np.eye(dim_meas) * (meas_noise_std ** 2)
+        self.I = np.eye(dim_model)
+        self.t_ahead = 0.0
         self.x_est = None
         self.P_est = None
         self.x_pred = None
@@ -25,65 +17,74 @@ class KalmanFilter:
         self.t_prev = None
         self.y_prev = None
         
-
     def _A(self, dt):
         A = np.array([[1, 0, dt, 0],
                       [0, 1, 0, dt],
                       [0, 0, 1, 0],
                       [0, 0, 0, 1]
-                      ], dtype = self.dtype)
+                      ])
         return A
 
     def _Q(self, dt):
-        Q = self.q * np.array([[dt ** 4 / 4, 0, dt ** 3 / 2, 0],
-                               [0, dt ** 4 / 3, 0, dt ** 3 /2],
-                               [dt ** 3/ 2, 0, dt**2, 0],
-                               [0, dt ** 3 / 2, 0, dt**2]])
+        Q = self.process_noise_std * np.array([[dt ** 4 / 4, 0, dt ** 3 / 2, 0],
+                                                [0, dt ** 4 / 3, 0, dt ** 3 /2],
+                                                [dt ** 3/ 2, 0, dt**2, 0],
+                                                [0, dt ** 3 / 2, 0, dt**2]])
         # Q = np.array([
-        #     [0.001, 0, 0, 0], 
-        #     [0, 0.001, 0, 0],
+        #     [0.01, 0, 0, 0], 
+        #     [0, 0.01, 0, 0],
         #     [0, 0, 0.1, 0],
         #     [0, 0, 0, 0.1]
         # ])
         return Q
 
-       
+    def _is_initialized(self):
+        return self.t_prev is not None
+    
     def predict(self, t):
         dt = t - self.t_prev + self.t_ahead
         A = self._A(dt)
         Q = self._Q(dt)
         self.P_pred = A @ self.P_est @ A.T + Q        
         self.x_pred = A @ self.x_est
-        self.t_prev = t  
+        self.t_prev = t
         return self.x_pred[:2]
-    
-    def init(self):
-        self.x_est = 1
-        self.P_est = 1
 
     def update(self, y, t):
-        if self.t_prev is None:
+        if self.t_prev is None or t - self.t_prev > 1:
             self.reset(y, t)
             return self.x_est, self.P_est
-        v = (y - self.y_prev) / (t - self.t_prev)
         
+        v = (y - self.y_prev) / (t - self.t_prev)
         z = np.hstack((y, v))
         err = z - self.C @ self.x_pred
-        if np.sqrt(np.mean(err**2)) > 100:
-            self.reset(y, t)
-            return self.x_est, self.P_est
+        
+        # if np.sqrt(np.mean(err**2)) > 100:
+        #     self.reset(y, t)
+        #     return self.x_est, self.P_est
+        
         S = self.C @ self.P_pred @ self.C.T + self.R
+
         K = self.P_pred @ self.C.T @ np.linalg.inv(S)
+
         self.x_est = self.x_pred + K @ err
+
         self.P_est = (self.I - K @ self.C) @ self.P_pred
+
         self.y_prev = y
+
         return self.x_est[:2]
     
     def reset(self, y, t):
+        self.C = np.array([[1, 0, 0, 0],
+                           [0, 1, 0, 0],
+                           [0, 0, 1, 0],
+                           [0, 0, 0, 1],
+                           ])
         self.t_prev = t
         self.x_est = np.array((y[0], y[1], 0, 0))
-        self.P_est = np.eye(self.dim_model, dtype=self.dtype)
-        self.P_est[2:, 2:] *= 10
+        self.P_est = np.eye(self.dim_model)
+        # self.P_est[2:, 2:] *= 10
         self.y_prev = y
     
 
@@ -113,8 +114,8 @@ def simulate_2d_motion(noise_std=1):
 
 if __name__ == "__main__":
     # Initialize the RLS system with measurement standard deviation
-    noise_std = 1
-    KF = KalmanFilter(4, 4, 2, 1)
+    noise_std = 2
+    KF = KalmanFilter(4, 4, noise_std, 1)
 
     z_true, z, t = simulate_2d_motion(noise_std=noise_std)
     dt = np.mean(np.diff(t))
