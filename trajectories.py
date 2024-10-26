@@ -122,32 +122,36 @@ def plot_trajectory(trajectory, trajectory_est=None, frame_shape=None, save_path
 
 
 if __name__ == "__main__":
-    frame_shape = (2560*2, 1440*2)
+    frame_shape = (2560, 1440)
     steps = 500
     fov = 44
     noise_std = 4
-    fps = 16
+    fps = 10
     dt = 1/fps
     t = np.arange(0, steps, 1) / fps
 
-    trajectory_type = 'diagonal'
+    trajectory_type = 'side_to_side'
     trajectory = generate_trajectory(frame_shape, fov, fps, trajectory_type, steps, noise_std)    
     
     x_est = np.zeros_like(trajectory)    
+    x_est2 = np.zeros_like(trajectory)    
     kf = initialize_kalman_filter(x0 = trajectory[0], dt = dt)    
-    kf2 = KalmanFilter2(dim_meas=2, dim_model=4, meas_noise_std=4, process_noise_std=10)
+    kf2 = KalmanFilter2(dim_meas=4, dim_model=4, meas_noise_std=2, process_noise_std=16)
     kf2.x_pred = np.hstack([trajectory[0], 0, 0])
 
     x_est[0] = trajectory[0]
+    x_est2[0] = trajectory[0]
     for i, x, in enumerate(trajectory[1:, :]):
         kf.update(x)
         kf.predict()
-        kf2.update(x, dt)
-        kf2.predict(dt)        
+        kf2.update(x, t[i])
+        x_pred = kf2.predict(t[i])
        
-        x_est[i+1, :] = kf2.x_est[:2]
+        x_est[i+1, :] = kf.x[:2]
+        x_est2[i+1, :] = x_pred#kf.x_est[:2]        
     
     plot_trajectory(trajectory, x_est, frame_shape, save_path=r'results/' + trajectory_type + '.png')
+    plot_trajectory(trajectory, x_est2, frame_shape, save_path=r'results/' + trajectory_type + '2.png')
 
 
     # trajectory_type = 'side_to_side'

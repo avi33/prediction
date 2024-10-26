@@ -7,9 +7,9 @@ class KalmanFilter:
     def __init__(self, dim_meas, dim_model, meas_noise_std, process_noise_std) -> None:        
         self.dim_model = dim_model
         self.process_noise_std = process_noise_std
-        self.R = np.eye(dim_meas) * (meas_noise_std ** 2)
         self.I = np.eye(dim_model)
-        self.t_ahead = 0.1
+        self.R = self.I * (meas_noise_std ** 2)
+        self.t_ahead = 0.2
         self.x_est = None
         self.P_est = None
         self.x_pred = None
@@ -64,7 +64,7 @@ class KalmanFilter:
         self.P_est = (self.I - K @ self.C) @ self.P_pred
 
         self.y_prev = y
-        self.t_last_update = t        
+        self.t_last_update = t
 
         return self.x_est[:2]
     
@@ -88,9 +88,9 @@ class KalmanFilter:
 def simulate_2d_motion(noise_std=1):
     # Parameters for the 2D motion
     p0 = np.array([0, 0])  # Initial position (x0, y0)
-    v = np.array([1, 0.1])  # Constant velocity (vx, vy)
+    v = np.array([1, 1])  # Constant velocity (vx, vy)
     fs = 10  # Frequency of measurements (e.g., 10 Hz)
-    time_steps = np.arange(0, 5, 1/fs)  # Time steps from 0 to 5 seconds with fs frequency
+    time_steps = np.arange(0, 10, 1/fs)  # Time steps from 0 to 5 seconds with fs frequency
 
 
     positions = []
@@ -110,7 +110,7 @@ def simulate_2d_motion(noise_std=1):
 
 if __name__ == "__main__":
     # Initialize the RLS system with measurement standard deviation
-    noise_std = 2
+    noise_std = 1
     KF = KalmanFilter(4, 4, noise_std, 1)
 
     z_true, z, t = simulate_2d_motion(noise_std=noise_std)
